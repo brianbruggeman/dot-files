@@ -1,0 +1,6 @@
+.git
+**/.ssh
+**/.aws
+
+# Added by cargo
+/target

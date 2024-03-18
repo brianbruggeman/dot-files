@@ -1,0 +1,25 @@
+#!/usr/sh
+
+check_for_mac() {
+    if [[ "$(uname)" == "Darwin" ]]; then
+        # This is a mac machine
+        return 1
+    else
+        # This is not a mac machine
+        return 0
+    fi
+}
+
+updates_for_mac() {
+    # -----------------------------------------------------------------------------
+    # Homebrew
+    # -----------------------------------------------------------------------------
+    # Do not check for updates when running brew
+    HOMEBREW_NO_AUTO_UPDATE=1
+}
+
+main() {
+    check_for_mac && updates_for_mac
+}
+
+main

@@ -1,0 +1,11 @@
+#!/usr/sh
+
+# -----------------------------------------------------------------------------
+# C
+# -----------------------------------------------------------------------------
+export LDFLAGS="-L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib"
+export PATH="/usr/local/opt/llvm/bin:$PATH"
+
+export LC_ALL=en_US.UTF-8
+export LANG=en_US.UTF-8
+export LANGUAGE=en_US.UTF-8

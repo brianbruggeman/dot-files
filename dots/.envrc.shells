@@ -1,0 +1,49 @@
+#!/usr/sh
+
+check_for_bash() {
+    if [[ $0 == *"bash"* ]]; then
+        # This is a bash shell
+        return 1
+    else
+        # This is not a bash shell
+        return 0
+    fi
+}
+
+check_for_zsh() {
+    if [[ $0 == *"zsh"* ]]; then
+        # This is a zsh shell
+        return 1
+    else
+        # This is not a zsh shell
+        return 0
+    fi
+}
+
+updates_for_bash() {
+    # -----------------------------------------------------------------------------
+    # Bash History
+    # -----------------------------------------------------------------------------
+    # Ignore duplicates and commands that start with a space
+    # Remove all duplicates from the history
+    export HISTCONTROL=ignoreboth:erasedups
+}
+
+updates_for_zsh() {
+    # -----------------------------------------------------------------------------
+    # Zsh History
+    # -----------------------------------------------------------------------------
+    # Set the history file
+    export HISTFILE=${ZDOTDIR:-$HOME}/.zsh_history
+    # Set the maximum number of history entries in memory
+    export HISTSIZE=10000000
+    #  Set sthe maximum number of history entries saved to the history file
+    export SAVEHIST=10000000
+}
+
+main() {
+    check_for_bash && updates_for_bash
+    check_for_zsh && updates_for_zsh
+}
+
+main

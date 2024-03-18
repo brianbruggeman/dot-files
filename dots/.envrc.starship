@@ -1,0 +1,35 @@
+#!/usr/sh
+
+# -----------------------------------------------------------------------------
+# Starship
+# -----------------------------------------------------------------------------
+# Set the prompt order
+export SPACESHIP_PROMPT_ORDER=(
+	time
+	user
+	host
+	git
+	exec_time
+	line_sep
+	exit_code
+	char
+)
+# Set the right prompt order
+export SPACESHIP_RPROMPT_ORDER=(
+	jobs
+)
+
+# Show the prefix before the first section
+export SPACESHIP_PROMPT_FIRST_PREFIX_SHOW=true
+# Show the time section
+export SPACESHIP_TIME_SHOW=true
+# Set the time format
+export SPACESHIP_TIME_FORMAT="%D{%d-%m-%Y %H.%M.%S}"
+# Show the battery
+export SPACESHIP_BATTERY_SHOW=always
+# Show the exit code
+export SPACESHIP_EXIT_CODE_SHOW=true
+# Show how long the last command took to execute
+export SPACESHIP_EXEC_TIME_SHOW=true
+# Threshold for showing execution time in seconds
+export SPACESHIP_EXEC_TIME_ELAPSED=10

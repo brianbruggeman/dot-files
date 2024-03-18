@@ -1,0 +1,9 @@
+#!/usr/sh
+
+# -----------------------------------------------------------------------------
+# Cargo and Rust and SCCACHE
+# -----------------------------------------------------------------------------
+export RUSTC_WRAPPER=$HOME/.cargo/bin/sccache
+export CARGO_TARGET_DIR=/tmp/cargo_target
+export CARGO_BUILD_RUSTC_WRAPPER=$HOME/.cargo/bin/sccache
+

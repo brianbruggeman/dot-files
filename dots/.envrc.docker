@@ -1,0 +1,6 @@
+#!/usr/sh
+
+# These flags will tell docker and docker-compose to always use the new build tools
+export COMPOSE_DOCKER_CLI_BUILD=1
+export DOCKER_BUILDKIT=1
+export COMPOSE_HTTP_TIMEOUT=180
