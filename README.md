@@ -16,3 +16,12 @@ Maybe in the future I'll use Chat GPT's API to generate the commit messages, but
 ## Installation
 
 The installation is basic for rust.  You can just run `cargo install --path .` from the root of the repository.  This will install the binary to your cargo bin directory.  If you don't have that in your path, you can add it to your path or copy the binary to a directory in your path.
+
+## Setup a cron
+
+To setup a cron, just run the `crontab -e` and then add to your liking.  This is mine, which runs once a week on Sunday morning when I'm not awake.
+
+```
+0 2 * * 0  mdm link
+0 2 * * 0  mdm sync
+```
