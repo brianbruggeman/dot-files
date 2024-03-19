@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
-use home::home_dir;
+
+use crate::get_xdg_home_dir as home_dir;
 
 /// Configuration for My Dotfiles Manager
 #[derive(Debug, serde::Deserialize, serde::Serialize)]

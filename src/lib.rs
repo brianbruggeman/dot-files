@@ -14,18 +14,23 @@ use tokio::fs;
 use tokio::process::Command;
 use tokio::io::{BufReader, AsyncBufReadExt};
 use std::process::Stdio;
-use home::home_dir;
+use directories::ProjectDirs;
 
 use config::MdmConfig;
 pub use true_path::true_path;
 
+
+pub fn get_xdg_home_dir() -> Option<PathBuf> {
+    ProjectDirs::from("", "", "mdm")
+        .map(|path| path.data_dir().to_path_buf())
+}
 
 /// Retrieve the configuration for the dfs tool
 pub async fn get_xdg_config_dir() -> anyhow::Result<PathBuf> {
     match env::var("XDG_CONFIG_HOME") {
         Ok(path) => Ok(PathBuf::from(path)),
         Err(e) => {
-            match home_dir() {
+            match get_xdg_home_dir() {
                 Some(path) => Ok(path.join(".config/mdm")),
                 None => Err(anyhow::anyhow!("Please set the XDG_CONFIG_HOME environment variable and rerun: {e}")),
             }
@@ -127,7 +132,7 @@ pub async fn is_live_symlink(path: impl AsRef<Path>) -> bool {
 pub async fn symlink_dotfiles(dotfiles_path: impl AsRef<Path>, force: bool, ignored_paths: &[impl AsRef<Path>]) -> anyhow::Result<()> {
     let dotfiles_path = true_path(dotfiles_path);
     let dotfiles = get_dotfiles_in_path(&dotfiles_path, ignored_paths).await?;
-    let home_dir = home_dir().ok_or_else(|| anyhow!("Unable to determine home directory"))?;
+    let home_dir = get_xdg_home_dir().ok_or_else(|| anyhow!("Unable to determine home directory"))?;
     let home_dotfiles = get_dotfiles_in_path(&home_dir, ignored_paths).await?;
     for dotfile in dotfiles {
         let dotfile_path = dotfiles_path.join(&dotfile);
@@ -156,7 +161,7 @@ pub async fn symlink_dotfiles(dotfiles_path: impl AsRef<Path>, force: bool, igno
 
 
 pub async fn remove_broken_symlinks(ignored_paths: &[impl AsRef<Path>]) -> anyhow::Result<()> {
-    let home_dir = home_dir().ok_or_else(|| anyhow!("Unable to determine home directory"))?;
+    let home_dir = get_xdg_home_dir().ok_or_else(|| anyhow!("Unable to determine home directory"))?;
     let home_dotfiles = get_dotfiles_in_path(&home_dir, ignored_paths).await?;
     for dotfile in home_dotfiles {
         let path = home_dir.join(&dotfile);
