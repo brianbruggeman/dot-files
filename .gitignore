@@ -18,6 +18,9 @@
 # Postgres (sensitive)
 **/.pg_service.conf
 
+# Python (sensitive)
+**/.pypirc
+
 # Vim (nothing sensitive, just annoying to have in the repo)
 **/.vim.info
 

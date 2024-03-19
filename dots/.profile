@@ -46,7 +46,7 @@ if [ -s ~/.bin/tmuxinator.zsh ]; then source ~/.bin/tmuxinator.zsh; fi
 export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
 
-. "$HOME/.cargo/env"
 
 # Generated for envman. Do not edit.
 [ -s "$HOME/.config/envman/load.sh" ] && source "$HOME/.config/envman/load.sh"
+. "$HOME/.cargo/env"

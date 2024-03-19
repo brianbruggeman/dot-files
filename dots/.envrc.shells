@@ -1,23 +1,7 @@
 #!/usr/sh
 
-check_for_bash() {
-    if [[ $0 == *"bash"* ]]; then
-        # This is a bash shell
-        return 1
-    else
-        # This is not a bash shell
-        return 0
-    fi
-}
-
-check_for_zsh() {
-    if [[ $0 == *"zsh"* ]]; then
-        # This is a zsh shell
-        return 1
-    else
-        # This is not a zsh shell
-        return 0
-    fi
+check_for_shell() {
+    [[ $SHELL == *"/$1" ]] && return 1 || return 0
 }
 
 updates_for_bash() {
@@ -42,8 +26,8 @@ updates_for_zsh() {
 }
 
 main() {
-    check_for_bash && updates_for_bash
-    check_for_zsh && updates_for_zsh
+    check_for_shell bash && updates_for_bash
+    check_for_shell zsh && updates_for_zsh
 }
 
 main

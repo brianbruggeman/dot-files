@@ -27,12 +27,21 @@ pub enum SubCommands {
         /// Force the linkage
         #[clap(short, long)]
         force: bool,
+
+        /// Profile to use
+        #[clap(short, long, default_value="default")]
+        profile: String,
+
         /// Path to the folder containing the dotfiles
         path: Option<PathBuf>,
     },
 
     /// Sync repository to remote host (github)
     Sync {
+        /// Profile to use
+        #[clap(short, long, default_value="default")]
+        profile: String,
+
         /// Path to the repository
         path: Option<PathBuf>,
     }
@@ -41,7 +50,9 @@ pub enum SubCommands {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let config = mdm::load_config().await?;
+    dotenv::dotenv().ok();
+    let config_path = mdm::get_config_file().await?;
+    let mut config = mdm::load_config(config_path).await?;
     let mdm = Mdm::parse();
 
     match mdm.subcommand {
@@ -49,7 +60,11 @@ async fn main() -> anyhow::Result<()> {
             println!("{:#?}", config);
         },
 
-        SubCommands::Link { path, force } => {
+        SubCommands::Link { path, force, profile } => {
+            let profile = config.get_mut(&profile).unwrap_or_else(|| {
+                eprintln!("Profile not found: {profile}");
+                std::process::exit(1);
+            });
             let path = match path {
                 Some(path) => {
                     let path = mdm::true_path(path);
@@ -58,13 +73,17 @@ async fn main() -> anyhow::Result<()> {
                         false => return Err(anyhow::anyhow!("Dotfiles path does not exist: {}", path.display())),
                     }
                 }
-                None => config.dots_path().to_owned(),
+                None => profile.dots_path().to_owned(),
             };
-            let config = config.as_builder().dots_path(&path).as_config();
+            profile.with_dots_path(&path);
+            handlers::link_dotfiles(profile.dots_path(), force, profile.ignored_paths()).await?;
             mdm::store_config(&config).await?;
-            handlers::link_dotfiles(config.dots_path(), force, config.ignored_paths()).await?;
         },
-        SubCommands::Sync { path } => {
+        SubCommands::Sync { path, profile } => {
+            let profile = config.get_mut(&profile).unwrap_or_else(|| {
+                eprintln!("Profile not found: {}", profile);
+                std::process::exit(1);
+            });
             let path = match path {
                 Some(path) => {
                     let path = mdm::true_path(path);
@@ -73,11 +92,11 @@ async fn main() -> anyhow::Result<()> {
                         false => return Err(anyhow::anyhow!("Dotfiles path does not exist: {}", path.display())),
                     }
                 }
-                None => config.repo_path().to_owned(),
+                None => profile.repo_path().to_owned(),
             };
-            let config = config.as_builder().repo_path(&path).as_config();
-            mdm::store_config(&config).await?;
+            profile.with_repo_path(&path);
             handlers::sync_dotfiles(path).await?;
+            mdm::store_config(&config).await?;
         },
     }
 

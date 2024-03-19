@@ -5,7 +5,6 @@ mod config;
 mod true_path;
 
 // ////////////////////////////////////////////////////////////////////////////
-use std::env;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Result, anyhow};
@@ -14,42 +13,31 @@ use tokio::fs;
 use tokio::process::Command;
 use tokio::io::{BufReader, AsyncBufReadExt};
 use std::process::Stdio;
-use directories::ProjectDirs;
 
 use config::MdmConfig;
 pub use true_path::true_path;
 
-
-pub fn get_xdg_home_dir() -> Option<PathBuf> {
-    ProjectDirs::from("", "", "mdm")
-        .map(|path| path.data_dir().to_path_buf())
+pub fn get_xdg_base() -> anyhow::Result<xdg::BaseDirectories> {
+    Ok(xdg::BaseDirectories::with_prefix("mdm")?)
 }
 
 /// Retrieve the configuration for the dfs tool
-pub async fn get_xdg_config_dir() -> anyhow::Result<PathBuf> {
-    match env::var("XDG_CONFIG_HOME") {
-        Ok(path) => Ok(PathBuf::from(path)),
-        Err(e) => {
-            match get_xdg_home_dir() {
-                Some(path) => Ok(path.join(".config/mdm")),
-                None => Err(anyhow::anyhow!("Please set the XDG_CONFIG_HOME environment variable and rerun: {e}")),
-            }
-        }
-    }
+pub fn get_xdg_config_dir() -> anyhow::Result<PathBuf> {
+    let base = get_xdg_base()?;
+    Ok(base.get_config_home())
 }
 
 /// Retrieve the mdm configuration file
 pub async fn get_config_file() -> anyhow::Result<PathBuf> {
-    let config_dir = get_xdg_config_dir().await?;
-    let config_file = format!("{}/config.toml", config_dir.display());
-    Ok(true_path(&config_file))
+    let config_dir = get_xdg_config_dir().expect("Unable to determine config directory");
+    let config_file = config_dir.join("config.toml");
+    Ok(true_path(config_file))
 }
 
-pub async fn load_config() -> anyhow::Result<config::MdmConfig> {
-    let config_file = get_config_file().await?;
-    match fs::try_exists(&config_file).await {
+pub async fn load_config(path: impl AsRef<Path>) -> anyhow::Result<config::MdmConfig> {
+    match fs::try_exists(path.as_ref()).await {
         Ok(true) => {
-            let contents = match fs::read_to_string(&config_file).await {
+            let contents = match fs::read_to_string(path.as_ref()).await {
                 Ok(contents) => contents,
                 Err(e) => return Err(anyhow::anyhow!("Failed to read config file: {e}")),
             };
@@ -99,11 +87,9 @@ pub async fn exists(path: impl AsRef<Path>) -> bool {
     let path = true_path(path);
     match fs::metadata(&path).await.is_ok() {
         true => {
-            println!("Exists: {}", path.display());
             true
         }
         false => {
-            println!("Does not exist: {}", path.display());
             false
         }
     }
@@ -132,7 +118,7 @@ pub async fn is_live_symlink(path: impl AsRef<Path>) -> bool {
 pub async fn symlink_dotfiles(dotfiles_path: impl AsRef<Path>, force: bool, ignored_paths: &[impl AsRef<Path>]) -> anyhow::Result<()> {
     let dotfiles_path = true_path(dotfiles_path);
     let dotfiles = get_dotfiles_in_path(&dotfiles_path, ignored_paths).await?;
-    let home_dir = get_xdg_home_dir().ok_or_else(|| anyhow!("Unable to determine home directory"))?;
+    let home_dir = home::home_dir().ok_or_else(|| anyhow!("Unable to determine home directory"))?;
     let home_dotfiles = get_dotfiles_in_path(&home_dir, ignored_paths).await?;
     for dotfile in dotfiles {
         let dotfile_path = dotfiles_path.join(&dotfile);
@@ -161,7 +147,7 @@ pub async fn symlink_dotfiles(dotfiles_path: impl AsRef<Path>, force: bool, igno
 
 
 pub async fn remove_broken_symlinks(ignored_paths: &[impl AsRef<Path>]) -> anyhow::Result<()> {
-    let home_dir = get_xdg_home_dir().ok_or_else(|| anyhow!("Unable to determine home directory"))?;
+    let home_dir = home::home_dir().ok_or_else(|| anyhow!("Unable to determine home directory"))?;
     let home_dotfiles = get_dotfiles_in_path(&home_dir, ignored_paths).await?;
     for dotfile in home_dotfiles {
         let path = home_dir.join(&dotfile);
