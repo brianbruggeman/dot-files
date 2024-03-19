@@ -1,6 +1,28 @@
-.git
-**/.ssh
+# Aws (sensitive)
 **/.aws
+**/.passwd-s3fs
 
 # Added by cargo
 /target
+
+# Databricks (sensitive)
+**/.databrickscfg
+**/.databricks-connect
+
+# History (sensitive)
+**/.*history
+
+# SSH (sensitive)
+**/.ssh
+
+# Postgres (sensitive)
+**/.pg_service.conf
+
+# Vim (nothing sensitive, just annoying to have in the repo)
+**/.vim.info
+
+# Wakatime (sensitive)
+**/.wakatime
+
+# Yarn (annoying)
+**/.yarnrc

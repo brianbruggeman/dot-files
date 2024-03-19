@@ -90,6 +90,39 @@ pub async fn get_dotfiles_in_path(path: impl AsRef<Path>, ignored_paths: &[impl 
     Ok(names)
 }
 
+pub async fn exists(path: impl AsRef<Path>) -> bool {
+    let path = true_path(path);
+    match fs::metadata(&path).await.is_ok() {
+        true => {
+            println!("Exists: {}", path.display());
+            true
+        }
+        false => {
+            println!("Does not exist: {}", path.display());
+            false
+        }
+    }
+}
+
+pub async fn is_symlink(path: impl AsRef<Path>) -> bool {
+    let path = true_path(path);
+    match fs::symlink_metadata(path).await {
+        Ok(metadata) => metadata.file_type().is_symlink(),
+        Err(_) => false,
+    }
+}
+
+pub async fn is_live_symlink(path: impl AsRef<Path>) -> bool {
+    let path = true_path(path);
+    match exists(&path).await && is_symlink(&path).await {
+        true => match fs::read_link(&path).await {
+                Ok(target_path) => exists(&target_path).await,
+                Err(_) => false,
+            }
+        false => false
+    }
+}
+
 
 pub async fn symlink_dotfiles(dotfiles_path: impl AsRef<Path>, force: bool, ignored_paths: &[impl AsRef<Path>]) -> anyhow::Result<()> {
     let dotfiles_path = true_path(dotfiles_path);
@@ -126,17 +159,11 @@ pub async fn remove_broken_symlinks(ignored_paths: &[impl AsRef<Path>]) -> anyho
     let home_dir = home_dir().ok_or_else(|| anyhow!("Unable to determine home directory"))?;
     let home_dotfiles = get_dotfiles_in_path(&home_dir, ignored_paths).await?;
     for dotfile in home_dotfiles {
-        let home_dotfile_path = true_path(home_dir.join(&dotfile));
-        if let Ok(metadata) = fs::symlink_metadata(&home_dotfile_path).await {
-            if metadata.file_type().is_symlink() {
-                // Verify if the symlink is broken by attempting to resolve it
-                if fs::metadata(&home_dotfile_path).await.is_err() {
-                    // The symlink is broken; remove it
-                    match fs::remove_file(&home_dotfile_path).await {
-                        Err(why) => println!("Failed to remove broken symlink at {}: {why}", home_dotfile_path.display()),
-                        Ok(_) => println!("Removed broken symlink at {}", home_dotfile_path.display()),
-                    }
-                }
+        let path = home_dir.join(&dotfile);
+        if is_symlink(&path).await && !is_live_symlink(&path).await {
+            match fs::remove_file(&path).await {
+                Err(why) => println!("Failed to remove broken symlink at {}: {why}", path.display()),
+                Ok(_) => println!("Removed broken symlink at {}", path.display()),
             }
         }
     }
@@ -208,4 +235,3 @@ async fn commit_changes(repo_path: &PathBuf) -> Result<()> {
 async fn push_changes(repo_path: &PathBuf) -> Result<()> {
     run_command("git push", repo_path).await
 }
-
